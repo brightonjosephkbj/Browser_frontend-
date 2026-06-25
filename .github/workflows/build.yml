@@ -30,17 +30,36 @@ jobs:
 
       - name: Prebuild
         run: npx expo prebuild --platform android --clean
-        env:
-          EXPO_NO_CAPABILITY_SYNC: 1
 
-      - name: Create debug keystore
+      - name: Fix build.gradle
         run: |
-          keytool -genkeypair -v \
-            -keystore android/app/debug.keystore \
-            -alias androiddebugkey \
-            -keyalg RSA -keysize 2048 -validity 10000 \
-            -storepass android -keypass android \
-            -dname "CN=Android Debug,O=Android,C=US"
+          cat > /tmp/fix.js << 'JSEOF'
+          const fs = require('fs');
+          const lines = fs.readFileSync('android/app/build.gradle', 'utf8').split('\n');
+          let result = [];
+          let inBlock = false;
+          let seenBrace = false;
+          let depth = 0;
+          for (const line of lines) {
+            if (!inBlock && /^\s*signingConfigs/.test(line)) {
+              inBlock = true; seenBrace = false; depth = 0;
+            }
+            if (inBlock) {
+              for (const c of line) {
+                if (c === '{') { depth++; seenBrace = true; }
+                if (c === '}') depth--;
+              }
+              if (seenBrace && depth <= 0) inBlock = false;
+              continue;
+            }
+            if (/^\s*signingConfig\s+/.test(line)) continue;
+            result.push(line);
+          }
+          fs.writeFileSync('android/app/build.gradle', result.join('\n'));
+          console.log('First 25 lines after fix:');
+          console.log(result.slice(0,25).join('\n'));
+          JSEOF
+          node /tmp/fix.js
 
       - name: Make gradlew executable
         run: chmod +x android/gradlew
