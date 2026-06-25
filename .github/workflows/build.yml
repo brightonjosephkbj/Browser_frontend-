@@ -31,6 +31,11 @@ jobs:
       - name: Prebuild
         run: npx expo prebuild --platform android --clean
 
+      - name: Fix build.gradle signing config
+        run: |
+          sed -i 's/signingConfig signingConfigs.release/\/\/signingConfig signingConfigs.release/g' android/app/build.gradle
+          sed -i '/signingConfigs {/,/}/d' android/app/build.gradle
+
       - name: Make gradlew executable
         run: chmod +x android/gradlew
 
