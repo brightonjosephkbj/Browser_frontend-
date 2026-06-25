@@ -30,9 +30,17 @@ jobs:
 
       - name: Prebuild
         run: npx expo prebuild --platform android --clean
+        env:
+          EXPO_NO_CAPABILITY_SYNC: 1
 
-      - name: Print build.gradle line 12
-        run: sed -n '1,20p' android/app/build.gradle
+      - name: Create debug keystore
+        run: |
+          keytool -genkeypair -v \
+            -keystore android/app/debug.keystore \
+            -alias androiddebugkey \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass android -keypass android \
+            -dname "CN=Android Debug,O=Android,C=US"
 
       - name: Make gradlew executable
         run: chmod +x android/gradlew
