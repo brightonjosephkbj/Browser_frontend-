@@ -31,21 +31,6 @@ jobs:
       - name: Prebuild
         run: npx expo prebuild --platform android --clean
 
-      - name: Fix signing config
-        run: |
-          python3 - <<'PYEOF'
-          import re
-          with open('android/app/build.gradle', 'r') as f:
-              content = f.read()
-          # Remove signingConfigs block entirely
-          content = re.sub(r'signingConfigs \{.*?\n\}', '', content, flags=re.DOTALL)
-          # Remove signingConfig reference
-          content = re.sub(r'\s*signingConfig signingConfigs\.release', '', content)
-          with open('android/app/build.gradle', 'w') as f:
-              f.write(content)
-          print("Fixed build.gradle")
-          PYEOF
-
       - name: Make gradlew executable
         run: chmod +x android/gradlew
 
